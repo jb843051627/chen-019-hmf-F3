@@ -98,6 +98,9 @@ public class THmfUseFlowServiceImpl implements ITHmfUseFlowService {
     @javax.annotation.Resource
     private THmfPayRowMapper hmfPayRowMapper;
 
+    @javax.annotation.Resource
+    private com.fc.v2.mapper.auto.THmfPayBookMapper hmfPayBookMapper;
+
     /** 交存核销行：已销账 */
     private static final int PAY_ROW_CLEARED = 1;
 
@@ -568,9 +571,21 @@ public class THmfUseFlowServiceImpl implements ITHmfUseFlowService {
         }
         BigDecimal deposited = BigDecimal.ZERO;
         if (!accounts.isEmpty()) {
+            // 已撤册的行随册作废，不计户面（新旧册以 book_id 分清）；旧批法无册头的行照旧计。
+            java.util.Set<Long> activeBookIds = new java.util.HashSet<>();
+            List<com.fc.v2.model.auto.THmfPayBook> liveBooks =
+                    this.hmfPayBookMapper == null ? java.util.Collections.emptyList()
+                            : this.hmfPayBookMapper.selectList(new QueryWrapper<com.fc.v2.model.auto.THmfPayBook>()
+                                    .eq("status", 0).eq("del_flag", 0));
+            for (com.fc.v2.model.auto.THmfPayBook b : liveBooks) {
+                activeBookIds.add(b.getId());
+            }
             List<THmfPayRow> rows = this.hmfPayRowMapper.selectList(new QueryWrapper<THmfPayRow>()
                     .eq("status", PAY_ROW_CLEARED).eq("del_flag", 0));
             for (THmfPayRow row : rows) {
+                if (row.getBookId() != null && !activeBookIds.contains(row.getBookId())) {
+                    continue;
+                }
                 if (row.getItemCode() != null && accounts.contains(row.getItemCode().trim())
                         && row.getQty() != null) {
                     deposited = deposited.add(row.getQty());

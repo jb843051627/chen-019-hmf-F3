@@ -37,6 +37,12 @@ public class THmfPayRow implements Serializable {
     @ApiModelProperty(value = "银行交存汇总册次号")
     private String batchNo;
 
+    /** 所属在册册头（同号撤册后重进门另起册头，新旧各行以册头分清，不混） */
+    @TableField("book_id")
+    @JsonSerialize(using = ToStringSerializer.class)
+    @ApiModelProperty(value = "所属在册册头")
+    private Long bookId;
+
     /** 原册行次 */
     @TableField("row_no")
     @ApiModelProperty(value = "原册行次")
@@ -52,10 +58,31 @@ public class THmfPayRow implements Serializable {
     @ApiModelProperty(value = "本行到帐金额")
     private BigDecimal qty;
 
+    /** 交存日期（落在哪一对账季就算哪一季；月底最后一天含当日算本期） */
+    @TableField("pay_date")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    @ApiModelProperty(value = "交存日期")
+    private Date payDate;
+
+    /** 所属对账季（交存日期落在哪季就算哪季，季内自始至终不改） */
+    @TableField("from_season")
+    @ApiModelProperty(value = "所属对账季")
+    private String fromSeason;
+
     /** 行落地情形 0待销 1已销账 2挂起 */
     @TableField("status")
     @ApiModelProperty(value = "行落地情形 0待销 1已销账 2挂起")
     private Integer status;
+
+    /** 所在层 0现行册面 1往期（挂起连跨两个对账季无去向则挪此层，只供翻查） */
+    @TableField("layer")
+    @ApiModelProperty(value = "所在层 0现行 1往期")
+    private Integer layer;
+
+    /** 挂起缘由（哪一户累到超过应缴、超在何处，就地写明） */
+    @TableField("hold_reason")
+    @ApiModelProperty(value = "挂起缘由")
+    private String holdReason;
 
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
@@ -105,6 +132,14 @@ public class THmfPayRow implements Serializable {
         this.batchNo = batchNo;
     }
 
+    public Long getBookId() {
+        return bookId;
+    }
+
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
+    }
+
     public Integer getRowNo() {
         return rowNo;
     }
@@ -129,12 +164,44 @@ public class THmfPayRow implements Serializable {
         this.qty = qty;
     }
 
+    public Date getPayDate() {
+        return payDate;
+    }
+
+    public void setPayDate(Date payDate) {
+        this.payDate = payDate;
+    }
+
+    public String getFromSeason() {
+        return fromSeason;
+    }
+
+    public void setFromSeason(String fromSeason) {
+        this.fromSeason = fromSeason;
+    }
+
     public Integer getStatus() {
         return status;
     }
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getLayer() {
+        return layer;
+    }
+
+    public void setLayer(Integer layer) {
+        this.layer = layer;
+    }
+
+    public String getHoldReason() {
+        return holdReason;
+    }
+
+    public void setHoldReason(String holdReason) {
+        this.holdReason = holdReason;
     }
 
     public Integer getDelFlag() {

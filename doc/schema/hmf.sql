@@ -100,19 +100,44 @@ CREATE TABLE IF NOT EXISTS t_hmf_cycle_task (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交单';
 
+CREATE TABLE IF NOT EXISTS t_hmf_pay_book (
+  id bigint NOT NULL COMMENT '主键',
+  batch_no varchar(64) DEFAULT NULL COMMENT '银行交存汇总册次号（进门定死，在册唯一）',
+  total_rows int DEFAULT NULL COMMENT '本册行数（册首数，与逐行点出的同回写出）',
+  cleared_rows int DEFAULT NULL COMMENT '已销行数（册首数）',
+  held_rows int DEFAULT NULL COMMENT '挂起行数（册首数）',
+  result int DEFAULT NULL COMMENT '核销结果 1核讫 2空册（全册无一行能核只许写空册）',
+  status int DEFAULT '0' COMMENT '册情形 0在册 1已撤（要改先走撤册手续）',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者（撤册经办）',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注（撤册事由等）',
+  KEY idx_batch_status (batch_no, status),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='银行交存汇总册册头';
+
 CREATE TABLE IF NOT EXISTS t_hmf_pay_row (
   id bigint NOT NULL COMMENT '主键',
   batch_no varchar(64) DEFAULT NULL COMMENT '银行交存汇总册次号',
-  row_no int DEFAULT NULL COMMENT '原册行次',
-  item_code varchar(64) DEFAULT NULL COMMENT '被对上的分户账户号',
+  book_id bigint DEFAULT NULL COMMENT '所属在册册头（撤册重进门另起册头，新旧行不混）',
+  row_no int DEFAULT NULL COMMENT '册内行次（进册按先后自占，挂起行也带原来排第几）',
+  item_code varchar(64) DEFAULT NULL COMMENT '被对上的分户账户号（销账只认户号）',
   qty decimal(12,2) DEFAULT NULL COMMENT '本行到帐金额',
+  pay_date date DEFAULT NULL COMMENT '交存日期（落在哪季算哪季，季末含当日算本期）',
+  from_season varchar(8) DEFAULT NULL COMMENT '所属对账季（进门按交存日期钉死）',
   status int DEFAULT NULL COMMENT '行落地情形 0待销 1已销账 2挂起',
+  layer int DEFAULT '0' COMMENT '所在层 0现行册面 1往期（挂起连跨两季挪此层，只供翻）',
+  hold_reason varchar(500) DEFAULT NULL COMMENT '挂起缘由（户号对不上/累计超应缴，就地写明）',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_book (book_id, layer, row_no),
+  KEY idx_batch (batch_no),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='银行交存汇总册核销行';
 
