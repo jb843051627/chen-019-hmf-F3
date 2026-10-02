@@ -52,10 +52,21 @@ public class THmfPayRow implements Serializable {
     @ApiModelProperty(value = "本行到帐金额")
     private BigDecimal qty;
 
-    /** 行落地情形 0待销 1已销账 2挂起 */
+    /** 本行交存日期（落在哪一对账季照它算，月底最后一天算本期） */
+    @TableField("pay_date")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    @ApiModelProperty(value = "本行交存日期")
+    private Date payDate;
+
+    /** 行落地情形 0未销(进门暂态) 1已销账 2挂起（每行只此三个去向之一） */
     @TableField("status")
-    @ApiModelProperty(value = "行落地情形 0待销 1已销账 2挂起")
+    @ApiModelProperty(value = "行落地情形 0未销 1已销账 2挂起")
     private Integer status;
+
+    /** 册层 0现行册面 1往期册页（挂起连跨两个对账季无去向即沉往期，现行册面不再露它） */
+    @TableField("arch_layer")
+    @ApiModelProperty(value = "册层 0现行册面 1往期册页")
+    private Integer archLayer;
 
     /** 删除标记 0正常 1删除 */
     @TableField("del_flag")
@@ -129,12 +140,28 @@ public class THmfPayRow implements Serializable {
         this.qty = qty;
     }
 
+    public Date getPayDate() {
+        return payDate;
+    }
+
+    public void setPayDate(Date payDate) {
+        this.payDate = payDate;
+    }
+
     public Integer getStatus() {
         return status;
     }
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getArchLayer() {
+        return archLayer;
+    }
+
+    public void setArchLayer(Integer archLayer) {
+        this.archLayer = archLayer;
     }
 
     public Integer getDelFlag() {

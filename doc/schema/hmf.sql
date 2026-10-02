@@ -100,19 +100,43 @@ CREATE TABLE IF NOT EXISTS t_hmf_cycle_task (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='结息催交单';
 
-CREATE TABLE IF NOT EXISTS t_hmf_pay_row (
+CREATE TABLE IF NOT EXISTS t_hmf_pay_book (
   id bigint NOT NULL COMMENT '主键',
-  batch_no varchar(64) DEFAULT NULL COMMENT '银行交存汇总册次号',
-  row_no int DEFAULT NULL COMMENT '原册行次',
-  item_code varchar(64) DEFAULT NULL COMMENT '被对上的分户账户号',
-  qty decimal(12,2) DEFAULT NULL COMMENT '本行到帐金额',
-  status int DEFAULT NULL COMMENT '行落地情形 0待销 1已销账 2挂起',
+  batch_no varchar(64) NOT NULL COMMENT '册次号（进门定死，同号第二遍只比对不改账；改正先走撤册）',
+  period_no int DEFAULT NULL COMMENT '进门对账季序号（按自然月：年*12+(月-1)；交存日月底最后一天算本月）',
+  total_rows int DEFAULT NULL COMMENT '册面总行数（与逐行销出来的数同一次统计给出）',
+  cleared_rows int DEFAULT NULL COMMENT '这趟核销行数（已销账）',
+  held_rows int DEFAULT NULL COMMENT '挂账行数（挂起）',
+  receipt int DEFAULT NULL COMMENT '回执栏 0空册（一行都没核掉，不许写核讫） 1核讫',
+  match_note varchar(1000) DEFAULT NULL COMMENT '同号第二遍逐行比对回话（去向不改、行不加不改）',
+  status int DEFAULT '0' COMMENT '册情形 0在册 1已撤册',
   del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
   create_by varchar(64) DEFAULT NULL COMMENT '创建者',
   create_time datetime DEFAULT NULL COMMENT '创建时间',
   update_by varchar(64) DEFAULT NULL COMMENT '更新者',
   update_time datetime DEFAULT NULL COMMENT '更新时间',
   remark varchar(500) DEFAULT NULL COMMENT '备注',
+  KEY idx_batch_no (batch_no, del_flag),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='银行交存汇总册';
+
+CREATE TABLE IF NOT EXISTS t_hmf_pay_row (
+  id bigint NOT NULL COMMENT '主键',
+  batch_no varchar(64) DEFAULT NULL COMMENT '银行交存汇总册次号',
+  row_no int DEFAULT NULL COMMENT '原册行次（进册按先后自动占定，往后翻挂起行直接带出此行次）',
+  item_code varchar(64) DEFAULT NULL COMMENT '被对上的分户账户号（销账只认户号，名字像不算对上）',
+  qty decimal(12,2) DEFAULT NULL COMMENT '本行到帐金额（同户号多行户面累加，不盖前一笔）',
+  pay_date date DEFAULT NULL COMMENT '本行交存日期（落在哪一对账季照它算，月底最后一天算本期）',
+  status int DEFAULT NULL COMMENT '行落地情形 0未销 1已销账 2挂起（每行只此一个去向）',
+  arch_layer int DEFAULT '0' COMMENT '册层 0现行册面 1往期册页（挂起连跨两个对账季无去向即沉往期）',
+  del_flag int DEFAULT '0' COMMENT '删除标记 0正常 1删除',
+  create_by varchar(64) DEFAULT NULL COMMENT '创建者',
+  create_time datetime DEFAULT NULL COMMENT '创建时间',
+  update_by varchar(64) DEFAULT NULL COMMENT '更新者',
+  update_time datetime DEFAULT NULL COMMENT '更新时间',
+  remark varchar(500) DEFAULT NULL COMMENT '备注（挂起须写明为什么）',
+  KEY idx_batch (batch_no, row_no),
+  KEY idx_item (item_code, status, arch_layer),
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='银行交存汇总册核销行';
 
